@@ -3,3 +3,4 @@ project
 .metals
 .idea
 .bsp
+.DS_Store
