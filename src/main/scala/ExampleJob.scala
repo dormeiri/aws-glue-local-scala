@@ -6,28 +6,32 @@ import org.apache.spark.{SparkConf, SparkContext}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 object ExampleJob {
-
   val AppName = "ExampleApp"
-  val LogLevel = "FATAL"
+  val LogLevel = "FATAL" // FATAL, ERROR, WARN, INFO
   val LocalMaster = "local"
   val LocalEnvironment = "local"
 
-  val RequiredArgs: Array[String] = Array("JOB_NAME", "ENV")
-
+  // Arguments
+  val JobNameArg = "JOB_NAME" // Required for all jobs
+  val EnvArg = "ENV" //
   val SourceArg = "SOURCE"
   val TargetArg = "TARGET"
-  val OptionalArgs: Map[String, String] = Map(
+  val RequiredArgs: Array[String] = Array(
+    JobNameArg,
+    EnvArg
+  )
+  val OptionalArgs: Map[String, String] = Map( // Argument name -> Default value
     SourceArg -> "target/scala-2.11/classes/test.csv",
     TargetArg -> "target/output/test"
   )
 
   def main(sysArgs: Array[String]): Unit = {
     val args = GlueArgParser.getResolvedOptions(sysArgs, RequiredArgs)
-    val jobName = args("JOB_NAME")
+    val jobName = args(JobNameArg)
     val sourcePath = args.getOrElse(SourceArg, OptionalArgs(SourceArg))
     val targetPath = args.getOrElse(TargetArg, OptionalArgs(TargetArg))
 
-    val isLocal = args("ENV") == LocalEnvironment
+    val isLocal = args(EnvArg) == LocalEnvironment
 
     println("Initializing Spark and GlueContext")
     val glueContext = getGlueContext(isLocal)
@@ -53,16 +57,15 @@ object ExampleJob {
   }
 
   def getGlueContext(isLocal: Boolean): GlueContext = {
+    // For testing, we need to use local execution
     val sc: SparkContext = if (isLocal) {
-      // For testing, we need to use local execution
       val conf = new SparkConf().setAppName(AppName).setMaster(LocalMaster)
-
       new SparkContext(conf)
     } else {
       new SparkContext()
     }
+    sc.setLogLevel(LogLevel)
 
-    sc.setLogLevel(LogLevel) // this can be changed to INFO, ERROR, or WARN
     new GlueContext(sc)
   }
 }
